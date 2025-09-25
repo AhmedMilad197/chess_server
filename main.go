@@ -1,11 +1,12 @@
 package main
 
 import (
+	"chess_server/config"
 	"chess_server/database"
 	"chess_server/routes"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	"chess_server/config"
+
 	"log"
 )
 
@@ -17,7 +18,6 @@ func main() {
 	config.LoadConfig()
 	db.Init()
 	router := gin.Default()
-	api := router.Group("/api")
-	routes.AuthRoutes(api)
+	routes.ApiRoutes(router)
 	router.Run()
 }

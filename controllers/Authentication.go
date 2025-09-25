@@ -54,7 +54,7 @@ func Register(c *gin.Context) {
 			"id":       newUser.ID,
 			"username": newUser.UserName,
 		},
-		time.Duration(time.Now().Month()),
+		time.Hour*24*30,
 	)
 	if createTokenErr != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong please try again later"})
@@ -98,7 +98,7 @@ func Login(c *gin.Context) {
 			"id":       user.ID,
 			"username": user.UserName,
 		},
-		time.Duration(time.Now().Month()),
+		time.Hour*24*30,
 	)
 	if createTokenErr != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong please try again later"})

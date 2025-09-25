@@ -3,7 +3,7 @@ package routes
 import (
 	"chess_server/controllers"
 	"github.com/gin-gonic/gin"
-	"chess_server/middleware"
+	"chess_server/middlewares"
 )
 
 func UserRoutes(api *gin.RouterGroup) {

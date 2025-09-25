@@ -45,7 +45,20 @@ func Register(c *gin.Context) {
 		Password: hash,
 	}
 	if err := db.DB.Create(&newUser).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create the user"})
+		return
+	}
+
+	defaultSetting := models.Setting{
+		UserID:        newUser.ID,
+		BoardTheme:    "standard",
+		SystemMode:    "light",
+		PieceStyle:    "standard",
+		Notifications: true,
+	}
+
+	if err := db.DB.Create(&defaultSetting).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create the settings"})
 		return
 	}
 

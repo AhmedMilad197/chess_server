@@ -39,7 +39,7 @@ func Init() {
 	sqlDB.SetMaxOpenConns(100)
 	sqlDB.SetConnMaxLifetime(0)
 
-	DB.AutoMigrate(&models.User{})
+	DB.AutoMigrate(&models.User{}, &models.Setting{})
 
 	fmt.Println("Database connection established")
 }

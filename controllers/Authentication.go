@@ -17,7 +17,10 @@ func Register(c *gin.Context) {
 		Password string `form:"password" json:"password" xml:"password" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "Error",
+			"data":    err.Error(),
+		})
 		return
 	}
 	var existingUser models.User
@@ -26,17 +29,26 @@ func Register(c *gin.Context) {
 
 	if err == nil {
 		if existingUser.UserName == payload.UserName {
-			c.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})
+			c.JSON(http.StatusConflict, gin.H{
+				"message": "Error",
+				"data":    "Username already exists",
+			})
 			return
 		}
 		if existingUser.Email == payload.Email {
-			c.JSON(http.StatusConflict, gin.H{"error": "Email already exists"})
+			c.JSON(http.StatusConflict, gin.H{
+				"message": "Error",
+				"data":    "Email already exists",
+			})
 			return
 		}
 	}
 	hash, hashErr := utils.GenerateFromPassword(payload.Password)
 	if hashErr != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Something went wrong please try again later"})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "Error",
+			"data":    "Something went wrong please try again later",
+		})
 		return
 	}
 	newUser := models.User{
@@ -45,7 +57,10 @@ func Register(c *gin.Context) {
 		Password: hash,
 	}
 	if err := db.DB.Create(&newUser).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create the user"})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Error",
+			"data":    "Failed to create the user",
+		})
 		return
 	}
 
@@ -58,7 +73,10 @@ func Register(c *gin.Context) {
 	}
 
 	if err := db.DB.Create(&defaultSetting).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create the settings"})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Error",
+			"data":    "Failed to create the settings",
+		})
 		return
 	}
 
@@ -70,12 +88,15 @@ func Register(c *gin.Context) {
 		time.Hour*24*30,
 	)
 	if createTokenErr != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong please try again later"})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Error",
+			"data":    "Something went wrong please try again later",
+		})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Registered successfully",
-		"token":   token,
+		"data":   token,
 	})
 }
 
@@ -85,7 +106,10 @@ func Login(c *gin.Context) {
 		Password string `form:"password" json:"password" xml:"password" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&payload); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "Error",
+			"data":    err.Error(),
+		})
 		return
 	}
 
@@ -93,16 +117,25 @@ func Login(c *gin.Context) {
 	err := db.DB.Where("user_name = ?", payload.UserName).First(&user).Error
 
 	if err != nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "There is no user with this username"})
+		c.JSON(http.StatusConflict, gin.H{
+			"message": "Error",
+			"data":    "There is no user with this username",
+		})
 		return
 	}
 	match, compareErr := utils.ComparePasswordAndHash(payload.Password, user.Password)
 	if compareErr != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong please try again later"})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Error",
+			"data":    "Something went wrong please try again later",
+		})
 		return
 	}
 	if !match {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Incorrect password"})
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "Error",
+			"data":    "Incorrect password",
+		})
 		return
 	}
 
@@ -114,11 +147,14 @@ func Login(c *gin.Context) {
 		time.Hour*24*30,
 	)
 	if createTokenErr != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong please try again later"})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Error",
+			"data":    "Something went wrong please try again later",
+		})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Logged in successfully",
-		"token":   token,
+		"data":   token,
 	})
 }

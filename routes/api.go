@@ -8,4 +8,5 @@ func ApiRoutes(router *gin.Engine) {
 	api := router.Group("/api")
 	AuthRoutes(api)
 	UserRoutes(api)
+	GameRoutes(api)
 }

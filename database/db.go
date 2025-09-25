@@ -6,6 +6,7 @@ import (
 
 	"chess_server/config"
 	"chess_server/models"
+	"chess_server/utils"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -39,7 +40,12 @@ func Init() {
 	sqlDB.SetMaxOpenConns(100)
 	sqlDB.SetConnMaxLifetime(0)
 
-	DB.AutoMigrate(&models.User{}, &models.Setting{})
+	DB.AutoMigrate(
+		&models.User{},
+		&models.Setting{},
+		&models.GameType{},
+	)
 
+	utils.SeedGameTypes(DB)
 	fmt.Println("Database connection established")
 }

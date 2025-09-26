@@ -7,7 +7,6 @@ import (
 type Setting struct {
 	ID            uint   `gorm:"primaryKey"`
 	UserID        uint   `gorm:"uniqueIndex"`
-	User          User   `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	BoardTheme    string `gorm:"type:varchar(50);default:'standard'"`
 	SystemMode    string `gorm:"type:varchar(50);default:'light'"`
 	PieceStyle    string `gorm:"type:varchar(50);default:'standard'"`

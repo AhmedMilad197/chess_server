@@ -10,4 +10,5 @@ func UserRoutes(api *gin.RouterGroup) {
 	userRoutes := api.Group("/users")
 	userRoutes.Use(middleware.Auth())
 	userRoutes.GET("/settings", controllers.GetSettings)
+	userRoutes.GET("/info", controllers.GetInfo)
 }

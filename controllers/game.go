@@ -5,7 +5,9 @@ import (
 	"chess_server/models"
 	"net/http"
 
+	"chess_server/utils"
 	"github.com/gin-gonic/gin"
+	"strconv"
 )
 
 func GetGameTypes(c *gin.Context) {
@@ -32,5 +34,26 @@ func GetGameTypes(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "game types",
 		"data":    responses,
+	})
+}
+
+func SearchGame(c *gin.Context) {
+	userData, ok := c.Get("user")
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Could not get the user"})
+		return
+	}
+
+	user, ok := userData.(models.User)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Could not get the user"})
+		return
+	}
+
+	gameTypeId, _ := strconv.Atoi(c.Param("id"))
+	utils.EnqueuePlayer(user.ID, gameTypeId)
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Player added to matchmaking queue",
 	})
 }

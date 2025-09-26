@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
+	"strconv"
 )
 
 type Argon2Params struct {
@@ -17,7 +18,7 @@ type Argon2Params struct {
 }
 
 func InitArgon2() {
-	
+
 }
 
 type Configuration struct {
@@ -28,6 +29,9 @@ type Configuration struct {
 	DBName     string
 	DBPort     string
 	DBSSLMode  string
+	RedisAddr  string
+	RedisPass  string
+	RedisDB    int
 	Argon2     *Argon2Params
 }
 
@@ -43,6 +47,7 @@ func LoadConfig() {
 		log.Fatal("JWT_SECRET_KEY is not set")
 	}
 
+	redisDB, _ := strconv.Atoi(os.Getenv("REDIS_DB"))
 	Config = &Configuration{
 		JWTSecret:  []byte(secret),
 		DBHost:     os.Getenv("DB_HOST"),
@@ -51,6 +56,9 @@ func LoadConfig() {
 		DBName:     os.Getenv("DB_NAME"),
 		DBPort:     os.Getenv("DB_PORT"),
 		DBSSLMode:  os.Getenv("DB_SSLMODE"),
+		RedisAddr:  os.Getenv("REDIS_ADDRESS"),
+		RedisPass:  os.Getenv("REDIS_PASSWORD"),
+		RedisDB:    redisDB,
 		Argon2: &Argon2Params{
 			Memory:      64 * 1024,
 			Iterations:  3,

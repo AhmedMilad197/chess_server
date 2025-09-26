@@ -1,31 +1,149 @@
 package utils
 
 import (
-	"log"
-	"time"
-
+	"chess_server/database"
 	"chess_server/models"
-	"gorm.io/gorm"
+	"encoding/json"
+	"fmt"
+	"github.com/go-redis/redis/v8"
+	"time"
 )
 
-func SeedGameTypes(db *gorm.DB) {
-	gameTypes := []models.GameType{
-		{Name: "Bullet", Duration: 1},
-		{Name: "Blitz", Duration: 5},
-		{Name: "Rapid", Duration: 10},
-		{Name: "Classical", Duration: 30},
+func createGame(p1, p2 Player) {
+	game := models.Game{
+		Player1ID:  p1.UserID,
+		Player2ID:  p2.UserID,
+		GameTypeID: p1.GameTypeID,
+		Status:     "ongoing",
 	}
+	db.DB.Create(&game)
 
-	for _, gt := range gameTypes {
-		var existing models.GameType
-		if err := db.Where("name = ?", gt.Name).First(&existing).Error; err != nil {
-			if err == gorm.ErrRecordNotFound {
-				gt.CreatedAt = time.Now()
-				gt.UpdatedAt = time.Now()
-				if err := db.Create(&gt).Error; err != nil {
-					log.Printf("Failed to create game type %s: %v", gt.Name, err)
-				}
-			}
+	fmt.Printf("Game created: %d vs %d\n", p1.UserID, p2.UserID)
+}
+
+type Player struct {
+	UserID               uint
+	GameTypeID           uint
+	Rating               int
+	LowerBoundRatingDiff int
+	UpperBoundRatingDiff int
+}
+
+func mutualFit(p1, p2 Player) bool {
+	return p2.Rating >= p1.Rating-p1.LowerBoundRatingDiff &&
+		p2.Rating <= p1.Rating+p1.UpperBoundRatingDiff &&
+		p1.Rating >= p2.Rating-p2.LowerBoundRatingDiff &&
+		p1.Rating <= p2.Rating+p2.UpperBoundRatingDiff
+}
+
+func EnqueuePlayer(userId uint, gameTypeId int) {
+	var user models.User
+	db.DB.Preload("Ratings.GameType").Preload("Setting").First(&user, userId)
+
+	var playerRating int
+	for _, rating := range user.Ratings {
+		if rating.GameTypeID == uint(gameTypeId) {
+			playerRating = rating.Rating
 		}
 	}
+
+	player := Player{
+		UserID:               user.ID,
+		GameTypeID:           uint(gameTypeId),
+		Rating:               playerRating,
+		LowerBoundRatingDiff: int(user.Setting.LowerBoundPlayerRatingDiff),
+		UpperBoundRatingDiff: int(user.Setting.UpperBoundPlayerRatingDiff),
+	}
+
+	serialized, err := json.Marshal(player)
+	if err != nil {
+		fmt.Println("Error marshaling player:", err)
+		return
+	}
+
+	if err := RDB.LPush(ctx, "players_q", serialized).Err(); err != nil {
+		fmt.Println("Error pushing player to queue:", err)
+		return
+	}
+
+	fmt.Printf("Player %d enqueued successfully.\n", user.ID)
+}
+
+func MatchmakingWorker() {
+	for {
+		players, err := RDB.LRange(ctx, "players_q", 0, -1).Result()
+		if err != nil {
+			time.Sleep(500 * time.Millisecond)
+			continue
+		}
+
+		if len(players) == 0 {
+			time.Sleep(500 * time.Millisecond)
+			continue
+		}
+
+		for _, playerRaw := range players {
+			matched := MatchPlayer(playerRaw)
+
+			if matched {
+				break
+			}
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
+}
+
+func MatchPlayer(playerRaw string) bool {
+	err := RDB.Watch(ctx, func(tx *redis.Tx) error {
+		players, err := tx.LRange(ctx, "players_q", 0, -1).Result()
+		if err != nil {
+			return err
+		}
+
+		var p Player
+		if err := json.Unmarshal([]byte(playerRaw), &p); err != nil {
+			return err
+		}
+
+		for _, raw := range players {
+			var candidate Player
+			if err := json.Unmarshal([]byte(raw), &candidate); err != nil {
+				continue
+			}
+
+			if candidate.UserID == p.UserID {
+				continue
+			}
+
+			if candidate.GameTypeID == p.GameTypeID && mutualFit(p, candidate) {
+				pipe := tx.TxPipeline()
+				pipe.LRem(ctx, "players_q", 1, raw)
+				pipe.LRem(ctx, "players_q", 1, playerRaw)
+				_, err := pipe.Exec(ctx)
+				if err != nil {
+					return err
+				}
+
+				fmt.Printf("Matched Player %d with Player %d in gameType %d\n",
+					p.UserID, candidate.UserID, p.GameTypeID)
+
+				/*
+				* create game in DB
+				* TODO: notify players
+				 */
+				createGame(p, candidate)
+
+				return nil
+			}
+		}
+
+		return nil
+	}, "players_q")
+
+	if err != nil {
+		fmt.Println("Matchmaking transaction failed:", err)
+		return false
+	}
+
+	return true
 }

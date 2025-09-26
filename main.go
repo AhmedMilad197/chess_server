@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 
+	"chess_server/utils"
 	"log"
 )
 
@@ -17,6 +18,8 @@ func main() {
 	}
 	config.LoadConfig()
 	db.Init()
+	utils.InitRedis()
+	go utils.MatchmakingWorker()
 	router := gin.Default()
 	routes.ApiRoutes(router)
 	router.Run()

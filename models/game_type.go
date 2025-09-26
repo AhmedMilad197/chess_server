@@ -5,9 +5,10 @@ import (
 )
 
 type GameType struct {
-	ID        uint   `gorm:"primaryKey;autoIncrement"`
-	Name      string `gorm:"not null"`
-	Duration  uint   `gorm:"not null"`
+	ID        uint             `gorm:"primaryKey;autoIncrement"`
+	Name      string           `gorm:"not null"`
+	Duration  uint             `gorm:"not null"`
+	Ratings   []UserGameRating `gorm:"foreignKey:GameTypeID"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

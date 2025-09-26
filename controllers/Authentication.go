@@ -80,6 +80,19 @@ func Register(c *gin.Context) {
 		return
 	}
 
+	var gameTypes []models.GameType
+	db.DB.Find(&gameTypes)
+
+	var ratings []models.UserGameRating
+	for _, g := range gameTypes {
+		ratings = append(ratings, models.UserGameRating{
+			UserID:     newUser.ID,
+			GameTypeID: g.ID,
+			Rating:     1200,
+		})
+	}
+	db.DB.Create(&ratings)
+
 	token, createTokenErr := utils.CreateToken(
 		map[string]interface{}{
 			"id":       newUser.ID,
@@ -96,7 +109,7 @@ func Register(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Registered successfully",
-		"data":   token,
+		"data":    token,
 	})
 }
 
@@ -155,6 +168,6 @@ func Login(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Logged in successfully",
-		"data":   token,
+		"data":    token,
 	})
 }

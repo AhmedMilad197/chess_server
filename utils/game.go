@@ -7,10 +7,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-redis/redis/v8"
+	"github.com/gorilla/websocket"
 	"time"
 )
 
 var Ctx context.Context
+
+type NotificationMessage struct {
+	GameId   int
+	Opponent Player
+}
 
 func InitGame() {
 	Ctx = context.Background()
@@ -24,6 +30,25 @@ func createGame(p1, p2 Player) {
 		Status:     "ongoing",
 	}
 	db.DB.Create(&game)
+	player1Notification := NotificationMessage{
+		GameId:   int(game.ID),
+		Opponent: p2,
+	}
+	player2Notification := NotificationMessage{
+		GameId:   int(game.ID),
+		Opponent: p1,
+	}
+	player1Data, _ := json.Marshal(&player1Notification)
+	player2Data, _ := json.Marshal(&player2Notification)
+
+	if err := Players[p1.UserID].WriteMessage(websocket.TextMessage, []byte(player1Data)); err != nil {
+		Players[p1.UserID].Close()
+		delete(Players, p1.UserID)
+	}
+	if err := Players[p2.UserID].WriteMessage(websocket.TextMessage, []byte(player2Data)); err != nil {
+		Players[p1.UserID].Close()
+		delete(Players, p1.UserID)
+	}
 
 	fmt.Printf("Game created: %d vs %d\n", p1.UserID, p2.UserID)
 }

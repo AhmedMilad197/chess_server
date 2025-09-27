@@ -93,12 +93,21 @@ func EnqueuePlayer(userId uint, gameTypeId int) {
 		return
 	}
 
-	if err := RDB.LPush(Ctx, "players_q", serialized).Err(); err != nil {
-		fmt.Println("Error pushing player to queue:", err)
+	_, posErr := RDB.LPos(Ctx, "players_q", string(serialized), redis.LPosArgs{}).Result()
+	if posErr != nil && posErr != redis.Nil {
+		fmt.Println("Error checking queue:", posErr)
 		return
 	}
 
-	fmt.Printf("Player %d enqueued successfully.\n", user.ID)
+	if posErr == redis.Nil {
+		if err := RDB.LPush(Ctx, "players_q", serialized).Err(); err != nil {
+			fmt.Println("Error pushing player to queue:", err)
+			return
+		}
+		fmt.Println("Player enqueued")
+	} else {
+		fmt.Println("Player already in queue, skipping")
+	}
 }
 
 func MatchmakingWorker() {

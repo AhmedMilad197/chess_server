@@ -23,5 +23,6 @@ func main() {
 	go utils.MatchmakingWorker()
 	router := gin.Default()
 	routes.ApiRoutes(router)
+	routes.WSRoutes(router)
 	router.Run()
 }

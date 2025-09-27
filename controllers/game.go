@@ -6,9 +6,14 @@ import (
 	"net/http"
 
 	"chess_server/utils"
-	"github.com/gin-gonic/gin"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
 )
+
+type TestWSRequest struct {
+	Message string `json:"message" binding:"required,omitempty"`
+}
 
 func GetGameTypes(c *gin.Context) {
 	var gameTypes []models.GameType
@@ -56,4 +61,19 @@ func SearchGame(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Player added to matchmaking queue",
 	})
+}
+
+func ConnectWS(c *gin.Context) {
+	userData, ok := c.Get("user")
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Could not get the user"})
+		return
+	}
+
+	user, ok := userData.(models.User)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Could not get the user"})
+		return
+	}
+	utils.HandleConnection(user.ID, c.Writer, c.Request)
 }

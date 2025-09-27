@@ -20,10 +20,10 @@ func InitRedis() {
 	}
 
 	if config.Config.Debug {
-		if err := RDB.Del(Ctx, "players_q").Err(); err != nil {
-			log.Printf("Failed to clear players_q: %v", err)
+		if err := RDB.Del(Ctx, "players_q", "players_q_set").Err(); err != nil {
+			log.Printf("Failed to clear player queues: %v", err)
 		} else {
-			log.Println("Redis list 'players_q' cleared (debug mode)")
+			log.Println("Redis queues 'players_q' and 'players_q_set' cleared (debug mode)")
 		}
 	}
 }

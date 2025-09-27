@@ -92,22 +92,29 @@ func EnqueuePlayer(userId uint, gameTypeId int) {
 		fmt.Println("Error marshaling player:", err)
 		return
 	}
+	serializedStr := string(serialized)
 
-	_, posErr := RDB.LPos(Ctx, "players_q", string(serialized), redis.LPosArgs{}).Result()
-	if posErr != nil && posErr != redis.Nil {
-		fmt.Println("Error checking queue:", posErr)
+	exists, err := RDB.SIsMember(Ctx, "players_q_set", serializedStr).Result()
+	if err != nil {
+		fmt.Println("Error checking set:", err)
 		return
 	}
 
-	if posErr == redis.Nil {
-		if err := RDB.LPush(Ctx, "players_q", serialized).Err(); err != nil {
-			fmt.Println("Error pushing player to queue:", err)
-			return
-		}
-		fmt.Println("Player enqueued")
-	} else {
+	if exists {
 		fmt.Println("Player already in queue, skipping")
+		return
 	}
+
+	pipe := RDB.TxPipeline()
+	pipe.SAdd(Ctx, "players_q_set", serializedStr)
+	pipe.RPush(Ctx, "players_q", serializedStr)
+	_, err = pipe.Exec(Ctx)
+	if err != nil {
+		fmt.Println("Error enqueuing player:", err)
+		return
+	}
+
+	fmt.Println("Player enqueued")
 }
 
 func MatchmakingWorker() {

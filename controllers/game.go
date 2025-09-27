@@ -42,7 +42,7 @@ func GetGameTypes(c *gin.Context) {
 	})
 }
 
-func SearchGame(c *gin.Context) {
+func PlayGame(c *gin.Context) {
 	userData, ok := c.Get("user")
 	if !ok {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Could not get the user"})

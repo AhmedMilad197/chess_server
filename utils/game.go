@@ -3,11 +3,18 @@ package utils
 import (
 	"chess_server/database"
 	"chess_server/models"
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/go-redis/redis/v8"
 	"time"
 )
+
+var Ctx context.Context
+
+func InitGame() {
+	Ctx = context.Background()
+}
 
 func createGame(p1, p2 Player) {
 	game := models.Game{
@@ -61,7 +68,7 @@ func EnqueuePlayer(userId uint, gameTypeId int) {
 		return
 	}
 
-	if err := RDB.LPush(ctx, "players_q", serialized).Err(); err != nil {
+	if err := RDB.LPush(Ctx, "players_q", serialized).Err(); err != nil {
 		fmt.Println("Error pushing player to queue:", err)
 		return
 	}
@@ -71,7 +78,7 @@ func EnqueuePlayer(userId uint, gameTypeId int) {
 
 func MatchmakingWorker() {
 	for {
-		players, err := RDB.LRange(ctx, "players_q", 0, -1).Result()
+		players, err := RDB.LRange(Ctx, "players_q", 0, -1).Result()
 		if err != nil {
 			time.Sleep(500 * time.Millisecond)
 			continue
@@ -94,8 +101,8 @@ func MatchmakingWorker() {
 }
 
 func MatchPlayer(playerRaw string) bool {
-	err := RDB.Watch(ctx, func(tx *redis.Tx) error {
-		players, err := tx.LRange(ctx, "players_q", 0, -1).Result()
+	err := RDB.Watch(Ctx, func(tx *redis.Tx) error {
+		players, err := tx.LRange(Ctx, "players_q", 0, -1).Result()
 		if err != nil {
 			return err
 		}
@@ -114,12 +121,11 @@ func MatchPlayer(playerRaw string) bool {
 			if candidate.UserID == p.UserID {
 				continue
 			}
-
 			if candidate.GameTypeID == p.GameTypeID && mutualFit(p, candidate) {
 				pipe := tx.TxPipeline()
-				pipe.LRem(ctx, "players_q", 1, raw)
-				pipe.LRem(ctx, "players_q", 1, playerRaw)
-				_, err := pipe.Exec(ctx)
+				pipe.LRem(Ctx, "players_q", 1, raw)
+				pipe.LRem(Ctx, "players_q", 1, playerRaw)
+				_, err := pipe.Exec(Ctx)
 				if err != nil {
 					return err
 				}

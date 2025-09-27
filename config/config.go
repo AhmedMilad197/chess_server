@@ -1,4 +1,3 @@
-// config/config.go
 package config
 
 import (
@@ -33,6 +32,7 @@ type Configuration struct {
 	RedisPass  string
 	RedisDB    int
 	Argon2     *Argon2Params
+	Debug      bool
 }
 
 var Config *Configuration
@@ -48,6 +48,7 @@ func LoadConfig() {
 	}
 
 	redisDB, _ := strconv.Atoi(os.Getenv("REDIS_DB"))
+	debugMode, _ := strconv.ParseBool(os.Getenv("DEBUG"))
 	Config = &Configuration{
 		JWTSecret:  []byte(secret),
 		DBHost:     os.Getenv("DB_HOST"),
@@ -66,5 +67,6 @@ func LoadConfig() {
 			SaltLength:  16,
 			KeyLength:   32,
 		},
+		Debug: debugMode,
 	}
 }

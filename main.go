@@ -18,6 +18,7 @@ func main() {
 	}
 	config.LoadConfig()
 	db.Init()
+	utils.InitGame()
 	utils.InitRedis()
 	go utils.MatchmakingWorker()
 	router := gin.Default()

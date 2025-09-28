@@ -30,6 +30,7 @@ type Configuration struct {
 	DBSSLMode  string
 	RedisAddr  string
 	RedisPass  string
+	Client     string
 	RedisDB    int
 	Argon2     *Argon2Params
 	Debug      bool
@@ -59,6 +60,7 @@ func LoadConfig() {
 		DBSSLMode:  os.Getenv("DB_SSLMODE"),
 		RedisAddr:  os.Getenv("REDIS_ADDRESS"),
 		RedisPass:  os.Getenv("REDIS_PASSWORD"),
+		Client:     os.Getenv("CLIENT_BASE_URL"),
 		RedisDB:    redisDB,
 		Argon2: &Argon2Params{
 			Memory:      64 * 1024,

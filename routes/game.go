@@ -8,7 +8,7 @@ import (
 
 func GameRoutes(api *gin.RouterGroup) {
 	gameRoutes := api.Group("/games")
-	gameRoutes.Use(middleware.Auth())
 	gameRoutes.GET("/", controllers.GetGameTypes)
+	gameRoutes.Use(middleware.Auth())
 	gameRoutes.GET("/:id/play", controllers.PlayGame)
 }

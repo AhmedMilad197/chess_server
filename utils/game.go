@@ -8,14 +8,17 @@ import (
 	"fmt"
 	"github.com/go-redis/redis/v8"
 	"github.com/gorilla/websocket"
+	"math/rand"
 	"time"
 )
 
 var Ctx context.Context
 
 type NotificationMessage struct {
-	GameId   int
-	Opponent Player
+	Type     string `json:"type"`
+	GameId   int    `json:"game_id"`
+	Opponent Player `json:"opponent"`
+	IsBlack  bool   `json:"is_black"`
 }
 
 func InitGame() {
@@ -30,13 +33,23 @@ func createGame(p1, p2 Player) {
 		Status:     "ongoing",
 	}
 	db.DB.Create(&game)
+	turn := rand.Intn(2)
+	isBlack := true
+	if turn == 1 {
+		isBlack = false
+	}
+	startGame := "start_game"
 	player1Notification := NotificationMessage{
+		Type:     startGame,
 		GameId:   int(game.ID),
 		Opponent: p2,
+		IsBlack:  isBlack,
 	}
 	player2Notification := NotificationMessage{
+		Type:     startGame,
 		GameId:   int(game.ID),
 		Opponent: p1,
+		IsBlack:  !isBlack,
 	}
 	player1Data, _ := json.Marshal(&player1Notification)
 	player2Data, _ := json.Marshal(&player2Notification)

@@ -24,6 +24,7 @@ func GetGameTypes(c *gin.Context) {
 	}
 
 	type GameTypeResponse struct {
+		ID       uint   `json:"id"`
 		Name     string `json:"name"`
 		Duration uint   `json:"duration"`
 	}
@@ -31,6 +32,7 @@ func GetGameTypes(c *gin.Context) {
 	responses := make([]GameTypeResponse, 0, len(gameTypes))
 	for _, gt := range gameTypes {
 		responses = append(responses, GameTypeResponse{
+			ID:       gt.ID,
 			Name:     gt.Name,
 			Duration: gt.Duration,
 		})
@@ -43,15 +45,19 @@ func GetGameTypes(c *gin.Context) {
 }
 
 func PlayGame(c *gin.Context) {
-	userData, ok := c.Get("user")
-	if !ok {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Could not get the user"})
+	token := c.Query("token")
+	claims, err := utils.ValidateToken(token)
+
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token", "details": err.Error()})
+		c.Abort()
 		return
 	}
-
-	user, ok := userData.(models.User)
-	if !ok {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "Could not get the user"})
+	var user models.User
+	result := db.DB.First(&user, claims["id"])
+	if result.Error != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+		c.Abort()
 		return
 	}
 

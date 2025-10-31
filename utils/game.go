@@ -179,6 +179,8 @@ func MatchPlayer(playerRaw string) bool {
 				pipe := tx.TxPipeline()
 				pipe.LRem(Ctx, "players_q", 1, raw)
 				pipe.LRem(Ctx, "players_q", 1, playerRaw)
+				pipe.SRem(Ctx, "players_q_set", raw)
+				pipe.SRem(Ctx, "players_q_set", playerRaw)
 				_, err := pipe.Exec(Ctx)
 				if err != nil {
 					return err
